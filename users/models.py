@@ -73,3 +73,80 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'Foydalanuvchi'
         verbose_name_plural = 'Foydalanuvchilar'
+
+
+class ViewPermission(models.Model):
+    view_name = models.CharField(verbose_name='Ko‘rish klassi', max_length=255)
+    path_name = models.CharField(verbose_name='URL nomi', max_length=255, null=True, blank=True)
+    method = models.CharField(verbose_name='Usul', max_length=255, default='post')
+
+    class Meta:
+        verbose_name = 'Ko‘rish oynasi'
+        verbose_name_plural = 'Ko‘rish oynalari'
+        ordering = ['view_name']
+
+    def __str__(self):
+        return f'{self.path_name} - {self.view_name} - {self.method}'
+
+
+class ViewPermissionRule(models.Model):
+    title = models.CharField(verbose_name='Nom', max_length=255)
+    permission = models.OneToOneField('ViewPermission', verbose_name='Ko‘rish oynasi',
+                                      on_delete=models.PROTECT, related_name='permission_rule')
+    category = models.ForeignKey('ViewPermissionRuleCategory', verbose_name='Kategoriya',
+                                 on_delete=models.PROTECT, related_name='permission_rule',
+                                 null=True, blank=True)
+    position = models.SmallIntegerField(verbose_name='Pozitsiya', default=30)
+
+    class Meta:
+        verbose_name = 'Ruxsat'
+        verbose_name_plural = 'Ruxsatlar'
+
+    def __str__(self):
+        return self.title
+
+
+class ViewPermissionRuleCategory(models.Model):
+    title = models.CharField(verbose_name='Nom', max_length=255)
+    position = models.SmallIntegerField(verbose_name='Pozitsiya', default=30)
+
+    class Meta:
+        verbose_name = 'Ruxsatlar kategoriyasi'
+        verbose_name_plural = 'Ruxsatlar kategoriyalari'
+
+    def __str__(self):
+        return self.title
+
+
+class ViewPermissionRuleGroup(models.Model):
+    title = models.CharField(verbose_name='Nom', max_length=255)
+    permissions = models.ManyToManyField('ViewPermissionRule', verbose_name='Ruxsatlar')
+
+    class Meta:
+        verbose_name = 'Ruxsatlar guruhi'
+        verbose_name_plural = 'Ruxsatlar guruhlari'
+
+    def __str__(self):
+        return self.title
+
+
+class ViewPermissionRuleToUser(models.Model):
+    user = models.ForeignKey('User', verbose_name='Foydalanuvchi',
+                             on_delete=models.CASCADE, related_name='permissions')
+    permission = models.ForeignKey('ViewPermissionRule', verbose_name='Ruxsat',
+                                   on_delete=models.PROTECT, related_name='users')
+
+    class Meta:
+        verbose_name = 'Foydalanuvchi ruxsati'
+        verbose_name_plural = 'Foydalanuvchi ruxsatlari'
+
+
+class ViewPermissionRuleGroupToUser(models.Model):
+    user = models.ForeignKey('User', verbose_name='Foydalanuvchi',
+                             on_delete=models.CASCADE, related_name='permission_groups')
+    group = models.ForeignKey('ViewPermissionRuleGroup', verbose_name='Ruxsat guruhi',
+                              on_delete=models.PROTECT, related_name='users')
+
+    class Meta:
+        verbose_name = 'Foydalanuvchi guruhi'
+        verbose_name_plural = 'Foydalanuvchi guruhlari'

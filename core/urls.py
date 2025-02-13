@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from tests.views import (
-    TestViewSet, UserTestResultViewSet
+    TestViewSet, TestResultViewSet
 )
 from users.views import UserViewSet
 from drf_yasg.views import get_schema_view
@@ -25,7 +25,7 @@ schema_view = get_schema_view(
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'tests', TestViewSet)
-router.register(r'user-test-results', UserTestResultViewSet)
+router.register(r'user-test-results', TestResultViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),  # Django admin paneli
