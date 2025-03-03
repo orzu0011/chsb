@@ -1,11 +1,19 @@
 from django.urls import path, include
-from rest_framework.routers import SimpleRouter
-from .views import TestViewSet, TestResultViewSet
+from rest_framework.routers import DefaultRouter
+from .views import (
+    ClassViewSet, SubjectViewSet, TestCategoryViewSet, 
+    TestViewSet, QuestionViewSet, AnswerViewSet, TestResultViewSet
+)
 
-router = SimpleRouter()
+router = DefaultRouter()
+router.register(r'classes', ClassViewSet)
+router.register(r'subjects', SubjectViewSet)
+router.register(r'test-categories', TestCategoryViewSet)
 router.register(r'tests', TestViewSet)
+router.register(r'questions', QuestionViewSet)
+router.register(r'answers', AnswerViewSet)
 router.register(r'test-results', TestResultViewSet)
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path('', include(router.urls)),
 ]
