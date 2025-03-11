@@ -1,5 +1,6 @@
 from django.db import models
 from users.models import User
+import random
 
 
 class Class(models.Model):
@@ -66,6 +67,24 @@ class Answer(models.Model):
         return self.text
 
 
+class UserTestSession(models.Model):
+    """Foydalanuvchi uchun test sessiyasi (Random savollar tarib qilinadi)"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    test = models.ForeignKey(Test, on_delete=models.CASCADE)
+    questions = models.ManyToManyField(Question)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    def generate_random_questions(self):
+        """Har bir foydalanuvchi uchun savollar tasodifiy tartibda beriladi"""
+        all_questions = list(self.test.questions.all())
+        random.shuffle(all_questions)
+        self.questions.set(all_questions)
+
+    def __str__(self):
+        return f"{self.user} - {self.test} (Session)"
+
+
 class TestResult(models.Model):
     """Test natijalari"""
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -75,3 +94,14 @@ class TestResult(models.Model):
 
     def __str__(self):
         return f'{self.user} - {self.test} - {self.score}'
+
+
+class UserAnswer(models.Model):
+    """Foydalanuvchi javoblari"""
+    test_result = models.ForeignKey(TestResult, on_delete=models.CASCADE, related_name="user_answers")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    selected_answer = models.ForeignKey(Answer, on_delete=models.CASCADE, null=True, blank=True)
+    is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.test_result.user} - {self.question} - {'Correct' if self.is_correct else 'Wrong'}"
