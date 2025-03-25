@@ -1,73 +1,89 @@
 from rest_framework import serializers
-from .models import Class, Subject, TestCategory, Test, Question, Answer, TestResult
-from users.models import User
-import random
+from .models import (
+    Class, Subject, TestCategory, Test, Question, Answer,
+    UserTestSession, TestResult, UserAnswer
+)
+
 
 class ClassSerializer(serializers.ModelSerializer):
+    """Sinf serializer"""
     class Meta:
         model = Class
-        fields = '__all__'
+        fields = ['id', 'name']
+
 
 class SubjectSerializer(serializers.ModelSerializer):
+    """Fan serializer"""
+    class_obj = ClassSerializer(read_only=True)
+
     class Meta:
         model = Subject
-        fields = '__all__'
+        fields = ['id', 'class_obj', 'name']
+
 
 class TestCategorySerializer(serializers.ModelSerializer):
+    """Test kategoriyasi serializer"""
+    subject = SubjectSerializer(read_only=True)
+
     class Meta:
         model = TestCategory
-        fields = '__all__'
+        fields = ['id', 'subject', 'name']
 
-class TestSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Test
-        fields = '__all__'
 
 class AnswerSerializer(serializers.ModelSerializer):
+    """Javob serializer"""
     class Meta:
         model = Answer
-        fields = '__all__'
+        fields = ['id', 'question', 'text', 'is_correct']
+
 
 class QuestionSerializer(serializers.ModelSerializer):
+    """Savol serializer"""
     answers = AnswerSerializer(many=True, read_only=True)
 
     class Meta:
         model = Question
-        fields = ['id', 'text', 'question_type', 'answers']
+        fields = ['id', 'test', 'text', 'question_type', 'answers']
 
-class UserAnswerSerializer(serializers.Serializer):
-    question_id = serializers.IntegerField()
-    selected_answer_id = serializers.IntegerField()
 
-class TestDetailSerializer(serializers.ModelSerializer):
-    questions = QuestionSerializer(many=True, read_only=True)
+class TestSerializer(serializers.ModelSerializer):
+    """Test serializer (Savollar bilan birga keladi)"""
+    category = TestCategorySerializer(read_only=True)
+    created_by = serializers.StringRelatedField(read_only=True)
+    questions = QuestionSerializer(many=True, read_only=True)  # Test ichida savollar keladi
 
     class Meta:
         model = Test
-        fields = ['id', 'name', 'description', 'time_limit', 'questions']
+        fields = ['id', 'category', 'name', 'description', 'time_limit', 'created_by', 'questions']
+
+
+class UserTestSessionSerializer(serializers.ModelSerializer):
+    """Foydalanuvchi test sessiyasi serializer"""
+    user = serializers.StringRelatedField(read_only=True)
+    test = TestSerializer(read_only=True)
+    questions = QuestionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = UserTestSession
+        fields = ['id', 'user', 'test', 'questions', 'started_at', 'completed_at']
+
 
 class TestResultSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
-    test = serializers.StringRelatedField()
-    
-    class Meta:
-        model = TestResult
-        fields = '__all__'
-
-class TestResultDetailSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
-    test = serializers.StringRelatedField()
-    incorrect_answers = serializers.SerializerMethodField()
-    correct_answers = serializers.SerializerMethodField()
+    """Test natijalari serializer"""
+    user = serializers.StringRelatedField(read_only=True)
+    test = TestSerializer(read_only=True)
 
     class Meta:
         model = TestResult
-        fields = ['user', 'test', 'score', 'incorrect_answers', 'correct_answers']
+        fields = ['id', 'user', 'test', 'score', 'completed_at']
 
-    def get_incorrect_answers(self, obj):
-        incorrect_answers = Answer.objects.filter(question__test=obj.test, is_correct=False)
-        return AnswerSerializer(incorrect_answers, many=True).data
 
-    def get_correct_answers(self, obj):
-        correct_answers = Answer.objects.filter(question__test=obj.test, is_correct=True)
-        return AnswerSerializer(correct_answers, many=True).data
+class UserAnswerSerializer(serializers.ModelSerializer):
+    """Foydalanuvchi javoblari serializer"""
+    test_result = TestResultSerializer(read_only=True)
+    question = QuestionSerializer(read_only=True)
+    selected_answer = AnswerSerializer(read_only=True)
+
+    class Meta:
+        model = UserAnswer
+        fields = ['id', 'test_result', 'question', 'selected_answer', 'is_correct']
