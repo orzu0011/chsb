@@ -1,0 +1,39 @@
+# Django __pycache__ va kompilyatsiya qilingan fayllar
+__pycache__/
+*.py[cod]
+
+# Django migration fayllari (faqat kerakli bo‘lsa)
+*/migrations/*.pyc
+*/migrations/*.pyo
+*/migrations/__pycache__/
+
+# Mahalliy sozlamalar
+.env
+*.env
+*.sqlite3
+config/settings/local.py
+config/settings/*.local.py
+
+# Media va statik fayllar
+/media/
+staticfiles/
+static/
+
+# Virtual muhit
+venv/
+.env/
+*.log
+
+# IDE va muharrirlar
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Docker
+*.pid
+docker-compose.override.yml
+
+# Nginx va Gunicorn log fayllari
+logs/
+*.log
