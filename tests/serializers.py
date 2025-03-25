@@ -23,32 +23,28 @@ class TestSerializer(serializers.ModelSerializer):
         model = Test
         fields = '__all__'
 
-class QuestionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Question
-        fields = '__all__'
-
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
         fields = '__all__'
+
+class QuestionSerializer(serializers.ModelSerializer):
+    answers = AnswerSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Question
+        fields = ['id', 'text', 'question_type', 'answers']
 
 class UserAnswerSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
     selected_answer_id = serializers.IntegerField()
 
 class TestDetailSerializer(serializers.ModelSerializer):
-    questions = serializers.SerializerMethodField()
+    questions = QuestionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Test
         fields = ['id', 'name', 'description', 'time_limit', 'questions']
-
-    def get_questions(self, obj):
-        questions = obj.questions.all()
-        shuffled_questions = list(questions)
-        random.shuffle(shuffled_questions)
-        return QuestionSerializer(shuffled_questions, many=True).data
 
 class TestResultSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
