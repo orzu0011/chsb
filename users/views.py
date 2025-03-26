@@ -1,21 +1,17 @@
 from django.contrib.auth import authenticate
-from rest_framework import status
-from rest_framework.authentication import BasicAuthentication
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
-
+from rest_framework_simplejwt.tokens import RefreshToken
 from users.models import User
 from users.serializers import UserSerializer, PasswordSerializer, CheckUserSerializer
 
-
-class UserViewSet(ModelViewSet):
-    authentication_classes = [BasicAuthentication]
-    permission_classes = [IsAuthenticated, ]
+class UserViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    http_method_names = ['get', 'post', 'put', 'patch', 'head', 'option']
+    http_method_names = ['get', 'post', 'put', 'patch']
 
     @action(detail=True, methods=['post'])
     def set_password(self, request, pk=None):
@@ -24,29 +20,24 @@ class UserViewSet(ModelViewSet):
         if serializer.is_valid():
             user.set_password(serializer.validated_data['password'])
             user.save()
-            return Response({'status': 'password set'})
-        else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({'status': 'Parol o‘rnatildi'})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'], permission_classes=[])
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
         serializer = CheckUserSerializer(data=request.data)
         if serializer.is_valid():
-            # Use Django's built-in authentication to authenticate the user
             user = authenticate(username=serializer.validated_data['username'],
                                 password=serializer.validated_data['password'])
 
-            if user is not None and user.is_active:
-                # Successful login
+            if user and user.is_active:
+                refresh = RefreshToken.for_user(user)
                 return Response({
                     'username': user.username,
                     'role': user.user_type,
-                    'fullname': user.get_full_name()
+                    'fullname': user.get_full_name(),
+                    'access_token': str(refresh.access_token),
+                    'refresh_token': str(refresh)
                 })
-            else:
-                # Invalid credentials or blocked user
-                return Response({'user': 'Invalid credentials or user is blocked'},
-                                status=status.HTTP_401_UNAUTHORIZED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Noto‘g‘ri login yoki parol'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
