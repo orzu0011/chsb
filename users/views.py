@@ -3,7 +3,6 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
 from users.models import User
 from users.serializers import UserSerializer, PasswordSerializer, CheckUserSerializer
 
@@ -31,13 +30,11 @@ class UserViewSet(viewsets.ModelViewSet):
                                 password=serializer.validated_data['password'])
 
             if user and user.is_active:
-                refresh = RefreshToken.for_user(user)
                 return Response({
                     'username': user.username,
                     'role': user.user_type,
                     'fullname': user.get_full_name(),
-                    'access_token': str(refresh.access_token),
-                    'refresh_token': str(refresh)
+                    'message': 'Tizimga muvaffaqiyatli kirildi'
                 })
             return Response({'detail': 'Noto‘g‘ri login yoki parol'}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
